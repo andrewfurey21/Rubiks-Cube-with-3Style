@@ -1,4 +1,4 @@
-const cubieLength = 0.1;
+const cubieLength = 0.2;
 const n = 3;
 
 let camera, scene, renderer;
