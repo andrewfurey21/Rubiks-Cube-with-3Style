@@ -1,0 +1,10 @@
+class Cubie {
+
+    constructor() {
+
+    }
+
+    render() {
+        
+    }
+}
