@@ -53,7 +53,7 @@ function createCubiePlane(
 
 class Cubie {
     constructor(i, j, k, cubieLength) {
-        this.mesh = new THREE.Group();
+        this.mesh = new THREE.Group(i, j, k);
         this.i = i;
         this.j = j;
         this.k = k;
@@ -80,12 +80,12 @@ class Cubie {
     
         //left
         this.mesh.add(
-            createCubiePlane(cubieLength / 2, 0, 0, 0, Math.PI / 2, 0, orange)
+            createCubiePlane(cubieLength / 2, 0, 0, 0, Math.PI / 2, 0, red)
         );
     
         //right
         this.mesh.add(
-            createCubiePlane(-cubieLength / 2, 0, 0, 0, Math.PI / 2, 0, red)
+            createCubiePlane(-cubieLength / 2, 0, 0, 0, Math.PI / 2, 0, orange)
         );
 
         this.mesh.position.set(i * cubieLength, j * cubieLength, k * cubieLength);

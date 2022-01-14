@@ -17689,9 +17689,12 @@
 	ArrayCamera.prototype.isArrayCamera = true;
 
 	class Group extends Object3D {
-		constructor() {
+		constructor(i, j, k) {
 			super();
 			this.type = 'Group';
+			this.i = i;
+			this.j = j;
+			this.k = k;
 		}
 
 	}

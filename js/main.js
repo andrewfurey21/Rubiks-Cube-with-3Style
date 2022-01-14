@@ -2,9 +2,9 @@
 const n = 3	;
 const cubieLength = 0.4/n;
 
+let cube;
 let camera, scene, renderer;
 
-let cube;
 
 //Turns (excluding anticlockwise) UDRLFBudrlfbMSE
 
@@ -31,9 +31,9 @@ function init() {
 	}
 
 	scene.add(cube);
-	cube.rotation.x = 0;
 	cube.rotation.y = Math.PI/4;
-
+	cube.rotation.x = Math.PI/4;
+	
 	//Apply settings to renderer and create canvas
 	renderer = new THREE.WebGLRenderer({ antialias: true });
 	renderer.setSize(window.innerWidth, window.innerHeight);
@@ -41,12 +41,38 @@ function init() {
 	document.body.appendChild(renderer.domElement);
 }
 
+init();
+
+let turned = false;
+
+//i == M
+//j == E
+//k == S
+
 function animation(time) {
 	//Apply all the changes to the scene and then render
-	cube.rotation.y += 0.02;
-	cube.rotation.z += 0.02;
+	// cube.rotation.z += 0.02;
+	// cube.rotation.y += 0.02;
+	// cube.rotation.x += 0.02;
+	
+	if (!turned) {
+		let cubiePositions = [];
+		for (let child of cube.children) {
+			if (child.i == -1) {
+				child.applyMatrix4( new THREE.Matrix4().makeRotationX(Math.PI/2) );
+			}
+			cubiePositions.push({i:child.i, j:child.j})
+			// if (child.i == 0) {
+			// 	child.applyMatrix4( new THREE.Matrix4().makeRotationX(Math.PI) );	
+			// }
+			// if (child.j == 0) {
+			// 	child.applyMatrix4( new THREE.Matrix4().makeRotationY(Math.PI) );
+			// }
+		}
+		
+		turned = true;
+	} 
 	renderer.render(scene, camera);
 }
 
-init();
 
