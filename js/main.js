@@ -7,7 +7,11 @@ let camera, scene, renderer;
 
 let turning = true;
 let counter = 0;
-let speed = 0.01;
+let speed = 5; // in degrees
+
+let sequence;
+
+let currentAngle = 0;
 
 function init() {
 	camera = new THREE.PerspectiveCamera(
@@ -39,24 +43,27 @@ function init() {
 	renderer.setSize(window.innerWidth, window.innerHeight);
 	renderer.setAnimationLoop(animation);
 	document.body.appendChild(renderer.domElement);
+
+	sequence = scramble(20);
 }
 
 function animation(time) {
 	cube.rotation.y += 0.005;
 
 	if (turning) {
+		// currentAngle += speed;
 
 		// I(-1); //L
 		// I(0); //M
-		// I(1); //R'
+		// I(1, -1); //R
 
-		// J(-1); //D
+		// J(-1, -1); //D'
 		// J(0); //E
 		// J(1); //U'
 
-		// K(-1); // B
+		// K(-1, -1); // B'
 		// K(0); // S'
-		// K(1); //F'
+		// K(1); // F'
 
 		turning = false;
 	}
@@ -65,15 +72,14 @@ function animation(time) {
 
 init();
 
-//LMR
-function I(slice) {
+//L M R'
+function I(slice, direction = 1) {
 	if (slice > Math.floor(n / 2) || slice < Math.floor(-n / 2)) {
 		console.error(`There is no ${slice} slice here.`);
 	} else {
-		//R'
 		for (let child of cube.children) {
 			if (child.i == slice) {
-				child.applyMatrix4(new THREE.Matrix4().makeRotationX(Math.PI / 2));
+				child.applyMatrix4(new THREE.Matrix4().makeRotationX(direction*Math.PI / 2));
 			}
 		}
 
@@ -81,19 +87,21 @@ function I(slice) {
 			if (child.i == slice) {
 				if ((child.j == 0) ^ (child.k == 0)) {
 					if (child.j == 0) {
-						child.j = -child.k;
+						child.j = -child.k*direction;
 						child.k = 0;
 					} else {
-						child.k = child.j;
+						child.k = child.j*direction;
 						child.j = 0;
 					}
 				} else if (child.j == 0 && child.k == 0) {
 					continue;
 				} else {
 					if (child.j != child.k) {
-						child.k *= -1;
+						child.k *= -direction;
+						child.j *= direction;
 					} else {
-						child.j *= -1;
+						child.j *= -direction;
+						child.k *= direction;
 					}
 				}
 			}
@@ -101,14 +109,14 @@ function I(slice) {
 	}
 }
 
-//UED
-function J(slice) {
+//U' E D
+function J(slice, direction=1) {
 	if (slice > Math.floor(n / 2) || slice < Math.floor(-n / 2)) {
 		console.error(`There is no ${slice} slice here.`);
 	} else {
 		for (let child of cube.children) {
 			if (child.j == slice) {
-				child.applyMatrix4(new THREE.Matrix4().makeRotationY(Math.PI / 2));
+				child.applyMatrix4(new THREE.Matrix4().makeRotationY(direction*Math.PI / 2));
 			}
 		}
 
@@ -116,19 +124,21 @@ function J(slice) {
 			if (child.j == slice) {
 				if ((child.k == 0) ^ (child.i == 0)) {
 					if (child.k == 0) {
-						child.k = -child.i;
+						child.k = -child.i*direction;
 						child.i = 0;
 					} else {
-						child.i = child.k;
+						child.i = child.k*direction;
 						child.k = 0;
 					}
 				} else if (child.k == 0 && child.i == 0) {
 					continue;
 				} else {
 					if (child.k != child.i) {
-						child.i *= -1;
+						child.i *= -direction;
+						child.k *= direction;
 					} else {
-						child.k *= -1;
+						child.k *= -direction;
+						child.i *= direction;
 					}
 				}
 			}
@@ -136,14 +146,14 @@ function J(slice) {
 	}
 }
 
-//BSF
-function K(slice) {
+//B S' F'
+function K(slice, direction=1) {
 	if (slice > Math.floor(n / 2) || slice < Math.floor(-n / 2)) {
 		console.error(`There is no ${slice} slice here.`);
 	} else {
 		for (let child of cube.children) {
 			if (child.k == slice) {
-				child.applyMatrix4(new THREE.Matrix4().makeRotationZ(Math.PI / 2));
+				child.applyMatrix4(new THREE.Matrix4().makeRotationZ(direction*Math.PI / 2));
 			}
 		}
 
@@ -151,19 +161,21 @@ function K(slice) {
 			if (child.k == slice) {
 				if ((child.j == 0) ^ (child.i == 0)) {
 					if (child.j == 0) {
-						child.j = child.i;
+						child.j = child.i*direction;
 						child.i = 0;
 					} else {
-						child.i = -child.j;
+						child.i = -child.j*direction;
 						child.j = 0;
 					}
 				} else if (child.j == 0 && child.i == 0) {
 					continue;
 				} else {
 					if (child.j != child.i) {
-						child.j *= -1;
+						child.j *= -direction;
+						child.i *= direction;
 					} else {
-						child.i *= -1;
+						child.i *= -direction;
+						child.j *= direction;
 					}
 				}
 			}
