@@ -40,29 +40,49 @@ function init() {
 	document.body.appendChild(renderer.domElement);
 
 	sequence = scramble(20);
-	logScramble(sequence)
-	for (let i = 0; i < sequence.length; i += 2) {
-		applyTurn(sequence[i], sequence[i + 1]);
-	}
+	sequence = ["D", "2 "];
+	logScramble(sequence);
+
 }
 
+//Related to turning and animating cube
 let turning = true;
 let appliedTurn = false;
 let currentMove = 0;
 
 let currentAngle = 0;
 let lastAngle = 0;
-let speed = 3; // in degrees
+let speed = 4.5; // in degrees
 
 function animation(time) {
 	// cube.rotation.y += 0.005;
+
+	if (currentMove > sequence.length) {
+		turning = false;
+	}
+	// console.log(currentAngle)
+	if (turning) {
+		if (!appliedTurn) {
+			appliedTurn = true;
+			applyTurn(sequence[currentMove], sequence[currentMove + 1], currentAngle, true);
+			currentAngle = 0;
+		} else if (currentAngle > Math.PI / 2) {
+			appliedTurn = false;
+			currentMove += 2;
+		} else {
+			currentAngle += (speed * Math.PI) / 180;
+			console.log(currentAngle * 180 / Math.PI)
+			applyTurn(sequence[currentMove], sequence[currentMove + 1], currentAngle, false);
+
+		}
+	}
 
 	renderer.render(scene, camera);
 }
 
 init();
 
-function applyTurn(turn, direction) {
+function applyTurn(turn, direction, currentAngle) {
 	let dir = scrambleDirection(direction).dir;
 	let turns = scrambleDirection(direction).turns;
 	switch (turn) {
@@ -76,13 +96,13 @@ function applyTurn(turn, direction) {
 			I(-1, dir, turns);
 			break;
 		case "U":
-			J(1, -dir, turns);
+			J(1, -dir, turns, -dir*currentAngle);
 			break;
 		case "E":
-			J(0, dir, turns);
+			J(0, dir, turns, dir*currentAngle);
 			break;
 		case "D":
-			J(-1, dir, turns);
+			J(-1, dir, turns, dir*currentAngle);
 			break;
 		case "F":
 			K(1, -dir, turns);
@@ -137,43 +157,49 @@ function I(slice, direction = 1, turns = 1) {
 }
 
 //U' E D
-function J(slice, direction = 1, turns = 1) {
+function J(slice, direction = 1, turns = 1, currentAngle, turning) {
 	if (slice > Math.floor(n / 2) || slice < Math.floor(-n / 2) || turns < 0) {
 		console.error(`Error: Invalid input`);
 	} else {
-		for (let child of cube.children) {
-			if (child.j == slice) {
-				child.applyMatrix4(
-					new THREE.Matrix4().makeRotationY((turns * direction * Math.PI) / 2)
-				);
-			}
-		}
-
-		for (let i = 1; i <= turns; i++) {
+		let goal = (turns * direction * Math.PI) / 2;
+		// console.log(goal, currentAngle)
+		if (Math.abs(goal) > Math.abs(turns * direction * currentAngle)) {
 			for (let child of cube.children) {
 				if (child.j == slice) {
-					if ((child.k == 0) ^ (child.i == 0)) {
-						if (child.k == 0) {
-							child.k = -child.i * direction;
-							child.i = 0;
+					child.applyMatrix4(
+						new THREE.Matrix4().makeRotationY((turns * direction * speed * Math.PI) / 180)
+					);
+				}
+			}
+		}
+		if (turning) {
+			for (let i = 1; i <= turns; i++) {
+				for (let child of cube.children) {
+					if (child.j == slice) {
+						if ((child.k == 0) ^ (child.i == 0)) {
+							if (child.k == 0) {
+								child.k = -child.i * direction;
+								child.i = 0;
+							} else {
+								child.i = child.k * direction;
+								child.k = 0;
+							}
+						} else if (child.k == 0 && child.i == 0) {
+							continue;
 						} else {
-							child.i = child.k * direction;
-							child.k = 0;
-						}
-					} else if (child.k == 0 && child.i == 0) {
-						continue;
-					} else {
-						if (child.k != child.i) {
-							child.i *= -direction;
-							child.k *= direction;
-						} else {
-							child.k *= -direction;
-							child.i *= direction;
+							if (child.k != child.i) {
+								child.i *= -direction;
+								child.k *= direction;
+							} else {
+								child.k *= -direction;
+								child.i *= direction;
+							}
 						}
 					}
 				}
 			}
 		}
+
 	}
 }
 
