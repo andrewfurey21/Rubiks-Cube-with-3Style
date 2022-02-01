@@ -9,7 +9,9 @@ let counter = 0;
 
 let sequence;
 
-function init() {
+let edges = [], corners = [];
+
+async function init() {
 	camera = new THREE.PerspectiveCamera(
 		70,
 		window.innerWidth / window.innerHeight,
@@ -41,7 +43,13 @@ function init() {
 
 	sequence = scramble(20);
 	logScramble(sequence);
+
+	corners = await loadComms("commutators/corners.csv");
+	console.log(corners);
+
 }
+
+
 
 //Related to turning and animating cube
 let turning = true;
@@ -54,6 +62,7 @@ let speed = 4.5; // in degrees
 
 function animation(time) {
 	cube.rotation.y += .01;
+	cube.rotation.x += .01;
 
 
 	if (currentMove >= sequence.length) {
