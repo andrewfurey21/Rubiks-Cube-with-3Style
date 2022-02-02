@@ -44,9 +44,8 @@ async function init() {
 	sequence = scramble(20);
 	logScramble(sequence);
 
-	corners = await loadComms("commutators/corners.csv");
-	console.log(corners);
-
+	corners = await loadComms("commutators/corners.tsv");
+	edges = await loadComms("commutators/edges.tsv");
 }
 
 
