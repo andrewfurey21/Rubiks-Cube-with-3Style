@@ -23,7 +23,7 @@ async function init() {
 	scene = new THREE.Scene();
 	cube = new THREE.Group();
 
-	loop1: for (let i = -Math.floor(n / 2); i < Math.ceil(n / 2); i++) {
+	for (let i = -Math.floor(n / 2); i < Math.ceil(n / 2); i++) {
 		for (let j = -Math.floor(n / 2); j < Math.ceil(n / 2); j++) {
 			for (let k = -Math.floor(n / 2); k < Math.ceil(n / 2); k++) {
 				let cubie = createCubie(i, j, k, cubieLength);
@@ -43,9 +43,15 @@ async function init() {
 
 	sequence = scramble(20);
 	logScramble(sequence);
+	// sequence = ["d", " "];
+
 
 	corners = await loadComms("commutators/corners.tsv");
 	edges = await loadComms("commutators/edges.tsv");
+
+	console.log(corners[1][2]);
+	let alg = parseAlg(corners[1][2]);
+	console.log("Final alg generated: ", alg);
 }
 
 
@@ -57,11 +63,11 @@ let currentMove = 0;
 
 let currentAngle = 0;
 let lastAngle = 0;
-let speed = 4.5; // in degrees
+let speed = 1; // in degrees
 
 function animation(time) {
-	cube.rotation.y += .01;
-	cube.rotation.x += .01;
+	// cube.rotation.y += .01;
+	// cube.rotation.x += .01;
 
 
 	if (currentMove >= sequence.length) {
@@ -130,47 +136,112 @@ function applyTurn(turn, direction, currentAngle, turning) {
 		case "B":
 			K(-1, dir, turns, dir * currentAngle, turning);
 			break;
+		case "r":
+			I(-1, -dir, turns, -dir * currentAngle, turning, true);
+			break;
+		case "l":
+			I(1, dir, turns, dir * currentAngle, turning, true);
+			break;
+		case "u":
+			J(-1, -dir, turns, -dir * currentAngle, turning, true);
+
+			break;
+		case "d":
+			J(1, dir, turns, dir * currentAngle, turning, true);
+
+			break;
+		case "f":
+			K(-1, -dir, turns, -dir * currentAngle, turning, true);
+			break;
+		case "b":
+			K(1, dir, turns, dir * currentAngle, turning, true);
+			break;
+
+		default:
+			console.log("Unknown move: " + turn);
+			break;
 	}
 }
 
 //L M R'
-function I(slice, direction, turns, currentAngle, turning) {
+function I(slice, direction, turns, currentAngle, turning, wide=false) {
 	if (slice > Math.floor(n / 2) || slice < Math.floor(-n / 2) || turns < 0) {
 		console.error(`There is no ${slice} slice here.`);
 	} else {
 		let goal = (turns * direction * Math.PI) / 2;
 		if (Math.abs(goal) >= Math.abs(turns * direction * currentAngle)) {
-			for (let child of cube.children) {
-				if (child.i == slice) {
-					child.applyMatrix4(
-						new THREE.Matrix4().makeRotationX(
-							(turns * direction * speed * Math.PI) / 180
-						)
-					);
+			if (wide) {
+				// cube.rotation.z += -(turns * direction * speed * Math.PI) / 180;
+				// cube.rotation.y += -(turns * direction * speed * Math.PI) / 180;
+				for (let child of cube.children) {
+					if (child.i != slice) {
+						child.applyMatrix4(
+							new THREE.Matrix4().makeRotationX(
+								(turns * direction * speed * Math.PI) / 180
+							)
+						);
+					}
+				}
+			} else {
+				for (let child of cube.children) {
+					if (child.i == slice) {
+						child.applyMatrix4(
+							new THREE.Matrix4().makeRotationX(
+								(turns * direction * speed * Math.PI) / 180
+							)
+						);
+					}
 				}
 			}
+
 		}
 		if (turning) {
 			for (let i = 1; i <= turns; i++) {
-				for (let child of cube.children) {
-					if (child.i == slice) {
-						if ((child.j == 0) ^ (child.k == 0)) {
-							if (child.j == 0) {
-								child.j = -child.k * direction;
-								child.k = 0;
+				if (wide) {
+					for (let child of cube.children) {
+						if (child.i != slice) {
+							if ((child.j == 0) ^ (child.k == 0)) {
+								if (child.j == 0) {
+									child.j = -child.k * direction;
+									child.k = 0;
+								} else {
+									child.k = child.j * direction;
+									child.j = 0;
+								}
+							} else if (child.j == 0 && child.k == 0) {
+								continue;
 							} else {
-								child.k = child.j * direction;
-								child.j = 0;
+								if (child.j != child.k) {
+									child.k *= -direction;
+									child.j *= direction;
+								} else {
+									child.j *= -direction;
+									child.k *= direction;
+								}
 							}
-						} else if (child.j == 0 && child.k == 0) {
-							continue;
-						} else {
-							if (child.j != child.k) {
-								child.k *= -direction;
-								child.j *= direction;
+						}
+					}
+				} else {
+					for (let child of cube.children) {
+						if (child.i == slice) {
+							if ((child.j == 0) ^ (child.k == 0)) {
+								if (child.j == 0) {
+									child.j = -child.k * direction;
+									child.k = 0;
+								} else {
+									child.k = child.j * direction;
+									child.j = 0;
+								}
+							} else if (child.j == 0 && child.k == 0) {
+								continue;
 							} else {
-								child.j *= -direction;
-								child.k *= direction;
+								if (child.j != child.k) {
+									child.k *= -direction;
+									child.j *= direction;
+								} else {
+									child.j *= -direction;
+									child.k *= direction;
+								}
 							}
 						}
 					}
@@ -181,94 +252,174 @@ function I(slice, direction, turns, currentAngle, turning) {
 }
 
 //U' E D
-function J(slice, direction = 1, turns = 1, currentAngle, turning) {
+function J(slice, direction = 1, turns = 1, currentAngle, turning, wide=false) {
 	if (slice > Math.floor(n / 2) || slice < Math.floor(-n / 2) || turns < 0) {
 		console.error(`Error: Invalid input`);
 	} else {
 		let goal = (turns * direction * Math.PI) / 2;
 		if (Math.abs(goal) > Math.abs(turns * direction * currentAngle)) {
-			for (let child of cube.children) {
-				if (child.j == slice) {
-					child.applyMatrix4(
-						new THREE.Matrix4().makeRotationY(
-							(turns * direction * speed * Math.PI) / 180
-						)
-					);
+			if (wide) {
+				for (let child of cube.children) {
+					if (child.j != slice) {
+						child.applyMatrix4(
+							new THREE.Matrix4().makeRotationY(
+								(turns * direction * speed * Math.PI) / 180
+							)
+						);
+					}
+				}
+			} else {
+				for (let child of cube.children) {
+					if (child.j == slice) {
+						child.applyMatrix4(
+							new THREE.Matrix4().makeRotationY(
+								(turns * direction * speed * Math.PI) / 180
+							)
+						);
+					}
 				}
 			}
+
 		}
 		if (turning) {
 			for (let i = 1; i <= turns; i++) {
-				for (let child of cube.children) {
-					if (child.j == slice) {
-						if ((child.k == 0) ^ (child.i == 0)) {
-							if (child.k == 0) {
-								child.k = -child.i * direction;
-								child.i = 0;
+				if (wide) {
+					for (let child of cube.children) {
+						if (child.j != slice) {
+							if ((child.k == 0) ^ (child.i == 0)) {
+								if (child.k == 0) {
+									child.k = -child.i * direction;
+									child.i = 0;
+								} else {
+									child.i = child.k * direction;
+									child.k = 0;
+								}
+							} else if (child.k == 0 && child.i == 0) {
+								continue;
 							} else {
-								child.i = child.k * direction;
-								child.k = 0;
+								if (child.k != child.i) {
+									child.i *= -direction;
+									child.k *= direction;
+								} else {
+									child.k *= -direction;
+									child.i *= direction;
+								}
 							}
-						} else if (child.k == 0 && child.i == 0) {
-							continue;
-						} else {
-							if (child.k != child.i) {
-								child.i *= -direction;
-								child.k *= direction;
+						}
+					}
+				} else {
+					for (let child of cube.children) {
+						if (child.j == slice) {
+							if ((child.k == 0) ^ (child.i == 0)) {
+								if (child.k == 0) {
+									child.k = -child.i * direction;
+									child.i = 0;
+								} else {
+									child.i = child.k * direction;
+									child.k = 0;
+								}
+							} else if (child.k == 0 && child.i == 0) {
+								continue;
 							} else {
-								child.k *= -direction;
-								child.i *= direction;
+								if (child.k != child.i) {
+									child.i *= -direction;
+									child.k *= direction;
+								} else {
+									child.k *= -direction;
+									child.i *= direction;
+								}
 							}
 						}
 					}
 				}
+
 			}
 		}
 	}
 }
 
 //B S' F'
-function K(slice, direction = 1, turns = 1, currentAngle, turning) {
+function K(slice, direction = 1, turns = 1, currentAngle, turning, wide=false) {
 	if (slice > Math.floor(n / 2) || slice < Math.floor(-n / 2) || turns < 0) {
 		console.error(`Error: Invalid ipnut`);
 	} else {
 		let goal = (turns * direction * Math.PI) / 2;
 		if (Math.abs(goal) >= Math.abs(turns * direction * currentAngle)) {
-			for (let child of cube.children) {
-				if (child.k == slice) {
-					child.applyMatrix4(
-						new THREE.Matrix4().makeRotationZ(
-							(turns * direction * speed * Math.PI) / 180
-						)
-					);
+			if (wide) {
+				for (let child of cube.children) {
+					if (child.k != slice) {
+						child.applyMatrix4(
+							new THREE.Matrix4().makeRotationZ(
+								(turns * direction * speed * Math.PI) / 180
+							)
+						);
+					}
+				}
+			} else {
+				for (let child of cube.children) {
+					if (child.k == slice) {
+						child.applyMatrix4(
+							new THREE.Matrix4().makeRotationZ(
+								(turns * direction * speed * Math.PI) / 180
+							)
+						);
+					}
 				}
 			}
+
 		}
 		if (turning) {
 			for (let i = 1; i <= turns; i++) {
-				for (let child of cube.children) {
-					if (child.k == slice) {
-						if ((child.j == 0) ^ (child.i == 0)) {
-							if (child.j == 0) {
-								child.j = child.i * direction;
-								child.i = 0;
+				if (wide) {
+					for (let child of cube.children) {
+						if (child.k != slice) {
+							if ((child.j == 0) ^ (child.i == 0)) {
+								if (child.j == 0) {
+									child.j = child.i * direction;
+									child.i = 0;
+								} else {
+									child.i = -child.j * direction;
+									child.j = 0;
+								}
+							} else if (child.j == 0 && child.i == 0) {
+								continue;
 							} else {
-								child.i = -child.j * direction;
-								child.j = 0;
+								if (child.j != child.i) {
+									child.j *= -direction;
+									child.i *= direction;
+								} else {
+									child.i *= -direction;
+									child.j *= direction;
+								}
 							}
-						} else if (child.j == 0 && child.i == 0) {
-							continue;
-						} else {
-							if (child.j != child.i) {
-								child.j *= -direction;
-								child.i *= direction;
+						}
+					}
+				} else {
+					for (let child of cube.children) {
+						if (child.k == slice) {
+							if ((child.j == 0) ^ (child.i == 0)) {
+								if (child.j == 0) {
+									child.j = child.i * direction;
+									child.i = 0;
+								} else {
+									child.i = -child.j * direction;
+									child.j = 0;
+								}
+							} else if (child.j == 0 && child.i == 0) {
+								continue;
 							} else {
-								child.i *= -direction;
-								child.j *= direction;
+								if (child.j != child.i) {
+									child.j *= -direction;
+									child.i *= direction;
+								} else {
+									child.i *= -direction;
+									child.j *= direction;
+								}
 							}
 						}
 					}
 				}
+
 			}
 		}
 	}
