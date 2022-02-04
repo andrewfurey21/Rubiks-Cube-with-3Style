@@ -11,6 +11,8 @@ let sequence;
 
 let edges = [], corners = [];
 
+let controls;
+
 async function init() {
 	camera = new THREE.PerspectiveCamera(
 		70,
@@ -18,6 +20,8 @@ async function init() {
 		0.01,
 		10
 	);
+
+	
 
 	camera.position.z = 1;
 	scene = new THREE.Scene();
@@ -43,21 +47,27 @@ async function init() {
 
 	sequence = scramble(20);
 	logScramble(sequence);
-	// sequence = ["d", " "];
+	// sequence = ["u", " ", "d", " "];
 
 
 	corners = await loadComms("commutators/corners.tsv");
 	edges = await loadComms("commutators/edges.tsv");
 
-	console.log(corners[1][2]);
-	let alg = parseAlg(corners[1][2]);
-	console.log("Final alg generated: ", alg);
+	let i = Math.floor(Math.random()*corners.length);
+	let j = Math.floor(Math.random()*corners[i].length);
+	console.log(corners[i][j]);
+	sequence = parseAlg(corners[i][j]);
+	
+	turning = true;
+
+	controls = THREE.OrbitControls(camera, renderer.domElement);
+
 }
 
 
 
 //Related to turning and animating cube
-let turning = true;
+let turning = false;
 let appliedTurn = false;
 let currentMove = 0;
 
@@ -65,13 +75,14 @@ let currentAngle = 0;
 let lastAngle = 0;
 let speed = 1; // in degrees
 
-function animation(time) {
+async function animation(time) {
 	// cube.rotation.y += .01;
 	// cube.rotation.x += .01;
-
+	
 
 	if (currentMove >= sequence.length) {
 		turning = false;
+		sequence = [];
 	}
 	if (turning) {
 

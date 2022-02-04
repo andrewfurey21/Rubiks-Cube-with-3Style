@@ -6,7 +6,6 @@ let moves = [
 	["F", "B", "S", "f", "b"],
 ];
 
-
 let movesSet = new Set();
 for (let i = 0; i < moves.length; i++) {
 	for (let j = 0; j < moves[i].length; j++) {
@@ -14,7 +13,7 @@ for (let i = 0; i < moves.length; i++) {
 	}
 }
 
-let additions = [" ", "' ", "2 "];
+let additions = [" ", "'", "2"];
 
 function scramble(length) {
 	let scramble = [];
@@ -24,7 +23,7 @@ function scramble(length) {
 
 	for (let i = 0; i < length; i++) {
 		let axis = Math.floor(Math.random() * moves.length);
-		let side = Math.floor(Math.random() * (moves[axis].length-3));
+		let side = Math.floor(Math.random() * (moves[axis].length - 3));
 
 		if (i > 0) {
 			if (lastAxis != axis) {
@@ -43,56 +42,115 @@ function scramble(length) {
 function logScramble(scramble) {
 	let s = "";
 	for (let i = 0; i < scramble.length; i++) {
-		s += scramble[i];
+		s += scramble[i] + (scramble[i] == "2" || scramble[i] == "'" ? " " : "");
 	}
 	console.log(s);
 	return s;
 }
 
 function scrambleDirection(direction) {
-	if (direction==additions[0]) {
-		return {dir:1, turns:1};
-	} else if (direction==additions[1]) {
-		return {dir:-1, turns:1};
-	} else if (direction==additions[2]) {
-		return {dir:1, turns:2};
+	if (direction == additions[0]) {
+		return { dir: 1, turns: 1 };
+	} else if (direction == additions[1]) {
+		return { dir: -1, turns: 1 };
+	} else if (direction == additions[2]) {
+		return { dir: 1, turns: 2 };
 	}
 }
 
-//input a string from comm sheets, output array with correct notation
 function parseAlg(alg) {
-	let output = [];
+	let finishedOutput = [];
+	let setupArray = [];
+	let first = [];
+	let second = [];
+	let setup = true;
+	let comm = false;
+	let twice = false;
 	for (let i = 0; i < alg.length; i++) {
-		if (movesSet.has(alg.charAt(i))) {
-			output.push(alg.charAt(i));
-			output.push((alg.charAt(i+1)=="'" || alg.charAt(i+1)=="2"?alg.charAt(i+1):" "));
-		} else if (alg.charAt(i)==":") {
-			let current= []
-			for (let j = 0; j < output.length; j++) {
-				current.push(output[j]);
-			}
-			let first = [];
-			let second = [];
-			for (let j = i+1; j < alg.length; j++) {
-				if (movesSet.has(alg.charAt(j))) {
-					first.push(alg.charAt(j));
-					first.push((alg.charAt(j+1)=="'" || alg.charAt(j+1)=="2"?alg.charAt(j+1):" "));
-				} else if (alg.charAt(j)==",") {
-					for (let k = j+1; k < alg.length; k++) {
-						if (movesSet.has(alg.charAt(k))) {
-							second.push(alg.charAt(k));
-							second.push((alg.charAt(k+1)=="'" || alg.charAt(k+1)=="2"?alg.charAt(k+1):" "));
-						}  else if (alg.charAt(k)=="]") {
-
-							i = alg.length;
-							k = alg.length;
-							j = alg.length;
-						}
-					}
-				}
+		if (alg.charAt(i) == ")" && alg.charAt(i + 1) == "2") {
+			twice = true;
+		} else if (alg.charAt(i) == ":") {
+			setup = false;
+		} else if (alg.charAt(i) == ",") {
+			setup = false;
+			comm = true;
+		} else if (movesSet.has(alg.charAt(i))) {
+			if (setup) {
+				setupArray.push(alg.charAt(i));
+				setupArray.push(
+					alg.charAt(i + 1) == "'" || alg.charAt(i + 1) == "2"
+						? alg.charAt(i + 1)
+						: " "
+				);
+			} else if (!comm) {
+				first.push(alg.charAt(i));
+				first.push(
+					alg.charAt(i + 1) == "'" || alg.charAt(i + 1) == "2"
+						? alg.charAt(i + 1)
+						: " "
+				);
+			} else {
+				second.push(alg.charAt(i));
+				second.push(
+					alg.charAt(i + 1) == "'" || alg.charAt(i + 1) == "2"
+						? alg.charAt(i + 1)
+						: " "
+				);
 			}
 		}
 	}
-	return output;
+
+	if (setup) {
+		let m = 1;
+		if (twice) m = 2;
+		for (let i = 0; i < setupArray.length * m; i++) {
+			finishedOutput.push(setupArray[i % setupArray.length]);
+		}
+	} else if (first.length==0) {
+		//there were no setup moves
+		for (let i = 0; i < setupArray.length; i++) {
+			finishedOutput.push(setupArray[i]);
+		}
+		for (let i = 0; i < second.length; i++) {
+			finishedOutput.push(second[i]);
+		}
+		for (let i = setupArray.length-2; i >= 0; i-=2) {
+			finishedOutput.push(setupArray[i]);
+			finishedOutput.push(oppositeTurn(setupArray[i+1]));
+		}
+		for (let i = second.length-2; i >= 0; i-=2) {
+			finishedOutput.push(second[i]);
+			finishedOutput.push(oppositeTurn(second[i+1]));
+		}
+	} else {
+		//normal alg
+		for (let i = 0; i < setupArray.length; i++) {
+			finishedOutput.push(setupArray[i]);
+		}
+		for (let i = 0; i < first.length; i++) {
+			finishedOutput.push(first[i]);
+		}
+		for (let i = 0; i < second.length; i++) {
+			finishedOutput.push(second[i]);
+		}
+		for (let i = first.length-2; i >= 0; i-=2) {
+			finishedOutput.push(first[i]);
+			finishedOutput.push(oppositeTurn(first[i+1]));
+		}
+		for (let i = second.length-2; i >= 0; i-=2) {
+			finishedOutput.push(second[i]);
+			finishedOutput.push(oppositeTurn(second[i+1]));
+		}
+		for (let i = setupArray.length-2; i >= 0; i-=2) {
+			finishedOutput.push(setupArray[i]);
+			finishedOutput.push(oppositeTurn(setupArray[i+1]));
+		}
+	}
+	return finishedOutput;
 }
 
+function oppositeTurn(direction) {
+	if (direction=="'") return " ";
+	else if (direction==" ") return "'";
+	else return "2";
+}
